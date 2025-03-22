@@ -1,58 +1,66 @@
-# Démarrer le projet  
+# Project Setup  
 
-## Modifier le fichier `hosts`  
+## Modify the `hosts` File  
 
-Avant de démarrer le projet, vous devez ajouter une entrée dans le fichier `hosts` de votre machine pour faire pointer `nextcloud.local` vers `127.0.0.1`.  
+Before starting the project, you need to add an entry to your system's `hosts` file to map `nextcloud.local` to `127.0.0.1`.  
 
 ### Windows  
 
-1. Ouvrez un terminal en mode administrateur (PowerShell ou Invite de commandes).  
-2. Exécutez la commande suivante :  
+1. Open a terminal as Administrator (PowerShell or Command Prompt).  
+2. Run the following command:  
 
    ```powershell
    Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "`n127.0.0.1 nextcloud.local" -Force
    ```
 
-3. Vérifiez que l'entrée a bien été ajoutée en ouvrant le fichier `C:\Windows\System32\drivers\etc\hosts` avec un éditeur de texte.  
+3. Verify the entry was added by opening `C:\Windows\System32\drivers\etc\hosts` in a text editor.  
 
-### Mac/Linux  
+### macOS/Linux  
 
-1. Ouvrez un terminal.  
-2. Exécutez la commande suivante :  
+1. Open a terminal.  
+2. Run the following command:  
 
    ```bash
    echo "127.0.0.1 nextcloud.local" | sudo tee -a /etc/hosts > /dev/null
    ```
 
-3. Vérifiez que l'entrée a bien été ajoutée en exécutant :  
+3. Verify the entry was added by running:  
 
    ```bash
    cat /etc/hosts
    ```
 
-## Configurer le fichier `.env`  
+## Configure the `.env` File  
 
-Avant de lancer le projet, vous devez configurer les variables d'environnement.  
+Before launching the project, you need to set up the environment variables.  
 
-1. Dupliquez le fichier `.env.example` en `.env` :  
+1. Duplicate the `.env.example` file as `.env`:  
 
    ```bash
    cp .env.example .env
    ```
 
-2. Ouvrez le fichier `.env` dans un éditeur de texte et définissez des valeurs personnalisées selon vos besoins.  
+2. Open the `.env` file in a text editor and set custom values, including the Nextcloud admin credentials.  
 
-## Lancer Docker Desktop  
+## Start Docker Desktop  
 
-Avant de démarrer le projet, assurez-vous que Docker Desktop est bien lancé et en cours d'exécution.  
+Ensure that Docker Desktop is running before proceeding.  
 
-## Démarrer le projet  
+## Launch the Project  
 
-Une fois les étapes précédentes effectuées, vous pouvez démarrer le projet avec la commande suivante :  
+Once all previous steps are completed, start the project with the following command:  
 
 ```bash
 docker compose --env-file=".env" up
 ```
 
-⚠️ **Attention** :  
-Le délai de démarrage peut être long. Certaines images sont volumineuses et le temps de démarrage de OnlyOffice peut prendre jusqu'à une minute.
+⚠️ **Note:**  
+The startup process may take some time. Some images are large, and OnlyOffice may take up to a minute to fully initialize.  
+
+## Access Nextcloud  
+
+Once the project is running, open a browser and navigate to:  
+
+[http://nextcloud.local](http://nextcloud.local)
+
+Log in using the credentials specified in the `.env` file.  
