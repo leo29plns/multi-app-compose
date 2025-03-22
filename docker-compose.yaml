@@ -1,0 +1,107 @@
+---
+
+services:
+  traefik:
+    image: traefik:v3.2.0
+    ports:
+      - 80:80
+    volumes:
+      - ./traefik:/etc/traefik
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      traefik_traefik:
+  nextcloud:
+    image: nextcloud:31.0.0-apache
+    depends_on:
+      - nextcloud-postgres
+      - nextcloud-valkey
+    networks:
+      traefik_traefik:
+      nextcloud:
+    environment:
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=nextcloud
+      - POSTGRES_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+      - POSTGRES_HOST=nextcloud-postgres
+      - REDIS_HOST=nextcloud-valkey
+      - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_LOGIN}
+      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
+      - JWT_SECRET=${NEXTCLOUD_JWT_SECRET}
+      - ONLYOFFICE_HOST=onlyoffice
+      - TRUSTED_PROXIES=0.0.0.0/0
+      - NEXTCLOUD_TRUSTED_DOMAINS=${NEXTCLOUD_DOMAIN}
+    volumes:
+      - nextcloud-core:/var/www/html
+      - nextcloud-data:/var/www/html/data
+      - nextcloud-config:/var/www/html/config
+      - ./nextcloud/apps.sh:/docker-entrypoint-hooks.d/post-installation/apps.sh
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.multi-app_nextcloud.entrypoints=web
+      - traefik.http.routers.multi-app_nextcloud.rule=Host(`${NEXTCLOUD_DOMAIN}`)
+      - traefik.http.services.multi-app_nextcloud.loadbalancer.server.port=80
+  nextcloud-postgres:
+    image: postgres:17.4-bookworm
+    networks:
+      nextcloud:
+    environment:
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=nextcloud
+      - POSTGRES_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+    volumes:
+      - nextcloud-postgres:/var/lib/postgresql/data
+  nextcloud-valkey:
+    image: valkey/valkey:8.0.2
+    networks:
+      nextcloud:
+    volumes:
+      - nextcloud-valkey:/data
+  onlyoffice:
+    image: onlyoffice/documentserver:8.3.2
+    networks:
+      traefik_traefik:
+      nextcloud:
+      onlyoffice:
+    environment:
+      - JWT_SECRET=${NEXTCLOUD_JWT_SECRET}
+      - REDIS_SERVER_HOST=onlyoffice-valkey
+      - AMQP_URI=amqp://guest:guest@onlyoffice-rabbitmq:5672/
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.multi-app_onlyoffice.entrypoints=web
+      - traefik.http.routers.multi-app_onlyoffice.rule=Host(`${NEXTCLOUD_DOMAIN}`) && PathPrefix(`/onlyoffice`)
+      - traefik.http.services.multi-app_onlyoffice.loadbalancer.server.port=80
+      - traefik.http.routers.multi-app_onlyoffice.middlewares=multi-app_onlyoffice-stripprefix
+      - traefik.http.middlewares.multi-app_onlyoffice-stripprefix.stripprefix.prefixes=/onlyoffice
+  onlyoffice-valkey:
+    image: valkey/valkey:8.0.2
+    networks:
+      onlyoffice:
+    volumes:
+      - onlyoffice-valkey:/data
+  onlyoffice-rabbitmq:
+    image: rabbitmq:4.0.7
+    networks:
+      onlyoffice:
+  whiteboard:
+    image: ghcr.io/nextcloud/whiteboard:1b527e302b0ca7e9fe241d14b4dceea110f44a19
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.multi-app_whiteboard.entrypoints=web
+      - traefik.http.routers.multi-app_whiteboard.rule=Host(`${NEXTCLOUD_DOMAIN}`) && PathPrefix(`/whiteboard`)
+      - traefik.http.services.multi-app_whiteboard.loadbalancer.server.port=3002
+      - traefik.http.routers.multi-app_whiteboard.middlewares=multi-app_whiteboard-stripprefix
+      - traefik.http.middlewares.multi-app_whiteboard-stripprefix.stripprefix.prefixes=/whiteboard
+
+volumes:
+  nextcloud-core:
+  nextcloud-config:
+  nextcloud-data:
+  nextcloud-postgres:
+  nextcloud-valkey:
+  onlyoffice-valkey:
+
+networks:
+  traefik_traefik:
+  nextcloud:
+  onlyoffice:

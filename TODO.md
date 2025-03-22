@@ -1,0 +1,7 @@
+- [ ] duplicati
+- [ ] buckets (minio)
+- [x] traefik
+- [ ] readme
+- [ ] uptimekuma
+- [ ] restart always
+- [ ] MAYBE a la fin, faire un authentik
