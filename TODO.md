@@ -5,3 +5,4 @@
 - [ ] uptimekuma
 - [ ] restart always
 - [ ] MAYBE a la fin, faire un authentik
+- [ ] avoir une version des images directement dans le .ENV
