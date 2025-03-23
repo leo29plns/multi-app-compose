@@ -9,5 +9,3 @@ php occ --no-warnings config:system:set onlyoffice jwt_secret --value=$JWT_SECRE
 php occ --no-warnings app:install whiteboard
 php occ --no-warnings config:app:set whiteboard collabBackendUrl --value="/whiteboard/"
 php occ --no-warnings config:app:set whiteboard jwt_secret_key --value=$JWT_SECRET
-
-php occ --no-warnings app:install tasks

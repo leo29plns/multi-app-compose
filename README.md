@@ -2,7 +2,7 @@
 
 ## Modify the `hosts` File  
 
-Before starting the project, you need to add an entry to your system's `hosts` file to map `nextcloud.local` to `127.0.0.1`.  
+Before starting the project, you need to add an entry to your system's `hosts` file to map `nextcloud.localhost` to `127.0.0.1`.  
 
 ### Windows  
 
@@ -10,7 +10,7 @@ Before starting the project, you need to add an entry to your system's `hosts` f
 2. Run the following command:  
 
    ```powershell
-   Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "`n127.0.0.1 nextcloud.local" -Force
+   Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "`n127.0.0.1 nextcloud.localhost" -Force
    ```
 
 3. Verify the entry was added by opening `C:\Windows\System32\drivers\etc\hosts` in a text editor.  
@@ -21,7 +21,7 @@ Before starting the project, you need to add an entry to your system's `hosts` f
 2. Run the following command:  
 
    ```bash
-   echo "127.0.0.1 nextcloud.local" | sudo tee -a /etc/hosts > /dev/null
+   echo "127.0.0.1 nextcloud.localhost" | sudo tee -a /etc/hosts > /dev/null
    ```
 
 3. Verify the entry was added by running:  
@@ -61,6 +61,6 @@ The startup process may take some time. Some images are large, and OnlyOffice ma
 
 Once the project is running, open a browser and navigate to:  
 
-[http://nextcloud.local](http://nextcloud.local)
+[http://nextcloud.localhost](http://nextcloud.localhost)
 
 Log in using the credentials specified in the `.env` file.  
