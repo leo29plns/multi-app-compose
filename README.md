@@ -14,6 +14,11 @@ Before starting the project, you need to add an entry to your system's `hosts` f
    ```
 
 3. Verify the entry was added by opening `C:\Windows\System32\drivers\etc\hosts` in a text editor.  
+4. Clear the DNS cache to apply changes:  
+
+   ```powershell
+   ipconfig /flushdns
+   ```
 
 ### macOS/Linux  
 
@@ -28,6 +33,12 @@ Before starting the project, you need to add an entry to your system's `hosts` f
 
    ```bash
    cat /etc/hosts
+   ```
+
+4. Clear the DNS cache to apply changes:  
+
+   ```bash
+   sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
    ```
 
 ## Configure the `.env` File  
