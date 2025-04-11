@@ -1,0 +1,16 @@
+---
+
+services:
+  my-custom-app-postgres:
+    image: postgres:17.4-bookworm
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_DB=my-custom-app
+      - POSTGRES_USER=my-custom-app
+      - POSTGRES_PASSWORD=changeme
+    volumes:
+      - my-custom-app-postgres:/var/lib/postgresql/data
+
+volumes:
+  my-custom-app-postgres:

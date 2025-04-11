@@ -1,0 +1,160 @@
+---
+
+services:
+  traefik:
+    image: traefik:${DOCKER_TRAEFIK_VERSION:-v3.2.0}
+    restart: unless-stopped
+    ports:
+      - 80:80
+    volumes:
+      - ./traefik:/etc/traefik
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      traefik_traefik:
+  nextcloud:
+    image: nextcloud:${DOCKER_NEXTCLOUD_VERSION:-31.0.2-apache}
+    restart: unless-stopped
+    depends_on:
+      - traefik
+      - nextcloud-postgres
+      - nextcloud-valkey
+    networks:
+      traefik_traefik:
+      nextcloud:
+    environment:
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=nextcloud
+      - POSTGRES_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+      - POSTGRES_HOST=nextcloud-postgres
+      - REDIS_HOST=nextcloud-valkey
+      - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_LOGIN}
+      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
+      - JWT_SECRET=${NEXTCLOUD_JWT_SECRET}
+      - ONLYOFFICE_HOST=onlyoffice
+      - NEXTCLOUD_TRUSTED_DOMAINS=${NEXTCLOUD_DOMAIN}
+    hostname: ${NEXTCLOUD_DOMAIN}
+    volumes:
+      - nextcloud-core:/var/www/html
+      - nextcloud-data:/var/www/html/data
+      - nextcloud-config:/var/www/html/config
+      - ./nextcloud/apps.sh:/docker-entrypoint-hooks.d/post-installation/apps.sh
+      - ./nextcloud/proxy.sh:/docker-entrypoint-hooks.d/before-starting/proxy.sh
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.multi-app_nextcloud.entrypoints=web
+      - traefik.http.routers.multi-app_nextcloud.rule=Host(`${NEXTCLOUD_DOMAIN}`)
+      - traefik.http.services.multi-app_nextcloud.loadbalancer.server.port=80
+  nextcloud-postgres:
+    image: postgres:${DOCKER_POSTGRES_VERSION:-17.4-bookworm}
+    restart: unless-stopped
+    networks:
+      nextcloud:
+    environment:
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=nextcloud
+      - POSTGRES_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+    volumes:
+      - nextcloud-postgres:/var/lib/postgresql/data
+  nextcloud-valkey:
+    image: valkey/valkey:${DOCKER_VALKEY_VERSION:-8.0.2}
+    restart: unless-stopped
+    networks:
+      nextcloud:
+    volumes:
+      - nextcloud-valkey:/data
+  onlyoffice:
+    image: onlyoffice/documentserver:${DOCKER_ONLYOFFICE_VERSION:-8.3.2}
+    restart: unless-stopped
+    networks:
+      traefik_traefik:
+      nextcloud:
+      onlyoffice:
+    environment:
+      - JWT_SECRET=${NEXTCLOUD_JWT_SECRET}
+      - REDIS_SERVER_HOST=onlyoffice-valkey
+      - AMQP_URI=amqp://guest:guest@onlyoffice-rabbitmq:5672/
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.multi-app_onlyoffice.entrypoints=web
+      - traefik.http.routers.multi-app_onlyoffice.rule=Host(`${NEXTCLOUD_DOMAIN}`) && PathPrefix(`/onlyoffice`)
+      - traefik.http.services.multi-app_onlyoffice.loadbalancer.server.port=80
+      - traefik.http.routers.multi-app_onlyoffice.middlewares=multi-app_onlyoffice-stripprefix
+      - traefik.http.middlewares.multi-app_onlyoffice-stripprefix.stripprefix.prefixes=/onlyoffice
+  onlyoffice-valkey:
+    image: valkey/valkey:${DOCKER_VALKEY_VERSION:-8.0.2}
+    restart: unless-stopped
+    networks:
+      onlyoffice:
+    volumes:
+      - onlyoffice-valkey:/data
+  onlyoffice-rabbitmq:
+    image: rabbitmq:${DOCKER_RABBITMQ_VERSION:-4.0.7}
+    restart: unless-stopped
+    networks:
+      onlyoffice:
+  whiteboard:
+    image: ghcr.io/nextcloud/whiteboard:${DOCKER_WHITEBOARD_VERSION:-1b527e302b0ca7e9fe241d14b4dceea110f44a19}
+    restart: unless-stopped
+    networks:
+      traefik_traefik:
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.multi-app_whiteboard.entrypoints=web
+      - traefik.http.routers.multi-app_whiteboard.rule=Host(`${NEXTCLOUD_DOMAIN}`) && PathPrefix(`/whiteboard`)
+      - traefik.http.services.multi-app_whiteboard.loadbalancer.server.port=3002
+      - traefik.http.routers.multi-app_whiteboard.middlewares=multi-app_whiteboard-stripprefix
+      - traefik.http.middlewares.multi-app_whiteboard-stripprefix.stripprefix.prefixes=/whiteboard
+  my-custom-app:
+    build:
+      context: ./my-custom-app
+      dockerfile: ./Dockerfile
+    pull_policy: build
+    restart: unless-stopped
+    networks:
+      traefik_traefik:
+      my-custom-app:
+    environment:
+      - TZ=UTC
+      - PORT=3333
+      - HOST=0.0.0.0
+      - LOG_LEVEL=info
+      - APP_KEY=${MY_CUSTOM_APP_KEY}
+      - NODE_ENV=production
+      - SESSION_DRIVER=cookie
+      - DB_HOST=my-custom-app-postgres
+      - DB_PORT=5432
+      - DB_USER=my-custom-app
+      - DB_PASSWORD=${MY_CUSTOM_APP_DB_PASSWORD}
+      - DB_DATABASE=my-custom-app
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.multi-app_my-custom-app.entrypoints=web
+      - traefik.http.routers.multi-app_my-custom-app.rule=Host(`${MY_CUSTOM_APP_DOMAIN}`)
+      - traefik.http.services.multi-app_my-custom-app.loadbalancer.server.port=3333
+  my-custom-app-postgres:
+    image: postgres:${DOCKER_POSTGRES_VERSION:-17.4-bookworm}
+    restart: unless-stopped
+    networks:
+      my-custom-app:
+    environment:
+      - POSTGRES_DB=my-custom-app
+      - POSTGRES_USER=my-custom-app
+      - POSTGRES_PASSWORD=${MY_CUSTOM_APP_DB_PASSWORD}
+    volumes:
+      - my-custom-app-postgres:/var/lib/postgresql/data
+
+volumes:
+  nextcloud-core:
+  nextcloud-config:
+  nextcloud-data:
+  nextcloud-postgres:
+  nextcloud-valkey:
+  onlyoffice-valkey:
+  my-custom-app-postgres:
+
+networks:
+  traefik_traefik:
+    name: traefik_traefik
+  nextcloud:
+  onlyoffice:
+  my-custom-app:
